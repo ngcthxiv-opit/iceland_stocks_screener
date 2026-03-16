@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Iceland Stocks Screener – Bộ lọc Cổ phiếu Iceland</title>
+  <meta name="description" content="Bộ lọc cổ phiếu Iceland với ~180 chỉ tiêu tài chính, phân tích kỹ thuật MACD/RSI." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+  <!-- ══ HEADER ══ -->
+  <header class="header">
+    <div class="header-brand">
+      <div class="brand-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="6" fill="url(#g1)"/>
+          <polyline points="4,22 10,14 15,18 22,8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stop-color="#00C9A7"/><stop offset="1" stop-color="#0061FF"/></linearGradient></defs>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">Iceland Stocks Screener</div>
+        <div class="brand-sub">Bộ lọc Cổ phiếu Iceland</div>
+      </div>
+    </div>
+
+    <nav class="header-toolbar">
+      <!-- TIME PICKER -->
+      <div class="toolbar-group" id="timepicker-group">
+        <span class="toolbar-label">Thời gian</span>
+        <div class="toggle-row">
+          <button class="toggle-btn active" id="btn-period-A" onclick="State.setPeriod('A')">Năm</button>
+          <button class="toggle-btn" id="btn-period-Q" onclick="State.setPeriod('Q')">Quý</button>
+        </div>
+        <select id="sel-year" class="sel" onchange="State.setYear(this.value)"></select>
+        <select id="sel-quarter" class="sel hidden" onchange="State.setQuarter(this.value)">
+          <option value="1">Q1</option><option value="2">Q2</option>
+          <option value="3">Q3</option><option value="4">Q4</option>
+        </select>
+      </div>
+
+      <div class="toolbar-sep"></div>
+
+      <!-- FILTER BUTTON -->
+      <button class="toolbar-btn accent-btn" id="btn-filter" onclick="FilterDrawer.open()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Bộ lọc chỉ số
+        <span class="badge" id="filter-badge" style="display:none">0</span>
+      </button>
+
+      <!-- TEMPLATE -->
+      <div class="toolbar-group">
+        <span class="toolbar-label">Mẫu hiển thị</span>
+        <select id="sel-template" class="sel" onchange="State.setTemplate(this.value)">
+          <option value="overview">Tổng quan</option>
+          <option value="price">Biến động giá</option>
+          <option value="valuation">Định giá</option>
+          <option value="profitability">Sinh lợi</option>
+        </select>
+      </div>
+
+      <button class="toolbar-btn ghost-btn" onclick="ColumnPanel.open()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Thêm cột
+      </button>
+
+      <div class="toolbar-sep"></div>
+
+      <!-- SEARCH -->
+      <div class="search-wrap" id="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="search-input" class="search-input" type="text" placeholder="Mã / Tên công ty…" autocomplete="off"
+          oninput="Autocomplete.onInput(this.value)" onblur="Autocomplete.hide()" onkeydown="Autocomplete.onKey(event)" />
+        <div class="autocomplete-list hidden" id="autocomplete-list"></div>
+      </div>
+
+      <!-- EXPORT -->
+      <button class="toolbar-btn accent-btn" onclick="ExcelExport.download()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Tải Excel
+      </button>
+    </nav>
+  </header>
+
+  <!-- ══ FILTER SUMMARY BAR ══ -->
+  <div class="filter-summary" id="filter-summary" style="display:none">
+    <span class="filter-summary-label">Bộ lọc:</span>
+    <div class="chip-list" id="chip-list"></div>
+    <button class="clear-all-btn" onclick="FilterDrawer.clearAll()">Xóa tất cả</button>
+  </div>
+
+  <!-- ══ STRATEGY TABS BAR ══ -->
+  <div class="strategy-bar" id="strategy-bar">
+    <div class="strategy-tabs-row">
+      <div class="strategy-tabs" id="strategy-tabs">
+        <button class="stab active" data-key="all"        onclick="StrategyTabs.setTab('all')">
+          <span class="stab-icon">📊</span> TẤT CẢ
+        </button>
+        <button class="stab" data-key="quality"    onclick="StrategyTabs.setTab('quality')">
+          <span class="stab-icon">⭐</span> CHẤT LƯỢNG
+        </button>
+        <button class="stab" data-key="garp"       onclick="StrategyTabs.setTab('garp')">
+          <span class="stab-icon">📈</span> TĂNG TRƯỞNG
+        </button>
+        <button class="stab" data-key="value"      onclick="StrategyTabs.setTab('value')">
+          <span class="stab-icon">💎</span> ĐỊNH GIÁ THẤP
+        </button>
+        <button class="stab" data-key="dividend"   onclick="StrategyTabs.setTab('dividend')">
+          <span class="stab-icon">💰</span> CỔ TỨC CAO
+        </button>
+        <button class="stab" data-key="health"     onclick="StrategyTabs.setTab('health')">
+          <span class="stab-icon">🏦</span> SỨC KHỎE TÀI CHÍNH
+        </button>
+        <button class="stab" data-key="efficiency" onclick="StrategyTabs.setTab('efficiency')">
+          <span class="stab-icon">⚙️</span> HIỆU QUẢ HOẠT ĐỘNG
+        </button>
+        <button class="stab" data-key="cashflow"   onclick="StrategyTabs.setTab('cashflow')">
+          <span class="stab-icon">💧</span> DÒNG TIỀN BỀN VỮNG
+        </button>
+      </div>
+      <button class="stab-reset" onclick="StrategyTabs.reset()" title="Reset về Tất cả">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.96"/></svg>
+        Reset chiến lược
+      </button>
+    </div>
+    <!-- Chip badges: tiêu chí + số mã -->
+    <div class="strategy-badges" id="strategy-badges"></div>
+  </div>
+
+  <!-- ══ MAIN TABLE AREA ══ -->
+  <main class="main-content">
+    <div class="table-toolbar">
+      <div class="table-info" id="table-info">Đang tải dữ liệu…</div>
+    </div>
+
+    <div class="table-wrapper" id="table-wrapper">
+      <div class="loading-overlay" id="loading-overlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Đang tải dữ liệu…</div>
+      </div>
+      <table id="main-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- ══ FILTER DRAWER ══ -->
+  <div class="overlay" id="filter-overlay" onclick="FilterDrawer.close()"></div>
+  <aside class="drawer" id="filter-drawer">
+    <div class="drawer-header">
+      <h2>Bộ lọc chỉ số</h2>
+      <button class="icon-btn" onclick="FilterDrawer.close()">✕</button>
+    </div>
+    <div class="drawer-tabs">
+      <button class="dtab active" id="dtab-active" onclick="FilterDrawer.switchTab('active')">Đã chọn</button>
+      <button class="dtab" id="dtab-all" onclick="FilterDrawer.switchTab('all')">Tất cả chỉ tiêu</button>
+    </div>
+    <div class="drawer-body">
+      <div id="filter-active-panel"></div>
+      <div id="filter-all-panel" class="hidden"></div>
+    </div>
+    <div class="drawer-footer">
+      <button class="ghost-btn" onclick="FilterDrawer.clearAll()">Xóa tất cả</button>
+      <button class="accent-btn" onclick="FilterDrawer.apply()">Áp dụng</button>
+    </div>
+  </aside>
+
+  <!-- ══ COLUMN PANEL ══ -->
+  <div class="overlay" id="col-overlay" onclick="ColumnPanel.close()"></div>
+  <aside class="drawer drawer-wide" id="col-drawer">
+    <div class="drawer-header">
+      <h2>Tùy chỉnh cột hiển thị</h2>
+      <button class="icon-btn" onclick="ColumnPanel.close()">✕</button>
+    </div>
+    <div class="col-panel-body">
+      <div class="col-groups" id="col-groups"></div>
+      <div class="col-selected-wrap">
+        <div class="col-selected-header">
+          <span>Cột đang hiển thị</span>
+          <button class="ghost-btn-sm" onclick="ColumnPanel.resetToDefault()">Về mặc định</button>
+        </div>
+        <ul class="col-selected-list" id="col-selected-list"></ul>
+      </div>
+    </div>
+    <div class="drawer-footer">
+      <button class="ghost-btn" onclick="ColumnPanel.close()">Đóng</button>
+      <button class="accent-btn" onclick="ColumnPanel.apply()">Áp dụng</button>
+    </div>
+  </aside>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
