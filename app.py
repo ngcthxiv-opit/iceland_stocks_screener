@@ -2,6 +2,7 @@ import sqlite3
 import os
 import io
 import json
+from pathlib import Path
 from flask import Flask, request, jsonify, send_file, render_template
 from flask_cors import CORS
 import pandas as pd
@@ -20,13 +21,14 @@ CORS(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH  = os.path.join(BASE_DIR, "Output", "Financial_Data.sqlite")
+DB_URI   = Path(DB_PATH).resolve().as_uri() + "?mode=ro"
 
 
 # ══════════════════════════════════════
 # DB HELPERS
 # ══════════════════════════════════════
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_URI, uri=True)
     conn.row_factory = sqlite3.Row
     return conn
 
